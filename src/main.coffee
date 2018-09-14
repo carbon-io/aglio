@@ -92,6 +92,30 @@ exports.render = (input, options, done) ->
 
     benchmark.start 'parse'
     drafter.parse filteredInput, type: 'ast', (err, res) ->
+
+        # Action example responses are an array in the parsed AST
+        # Responses in the array may share the same HTTP status code
+        # Convert example responses to an object that maps responses
+        #   to their HTTP status code
+        res.ast.resourceGroups = res.ast.resourceGroups.map (resourceGroup) ->
+            resourceGroup.resources = resourceGroup.resources.map (resource) ->
+                resource.actions = resource.actions.map (action) ->
+                    action.examples = action.examples.map (example) ->
+                        responses = { }
+                        example.responses.forEach (response) ->
+                            if responses[response.name]
+                                responses[response.name].push response
+                            else
+                                responses[response.name] = [ response ]
+                            return
+                        example.responses = responses
+                        return example
+                    return action
+                return resource
+            return resourceGroup
+
+        fs.writeFileSync('ast.json', JSON.stringify(res.ast, null, 4))
+
         benchmark.end 'parse'
         if err
             err.input = input
