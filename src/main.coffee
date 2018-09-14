@@ -405,56 +405,65 @@ decorate = (api, md, slugCache, verbose) ->
 
         # Examples have a content section only if they have a
         # description, headers, body, or schema.
+
+        processItem = (item) ->
+          # If there is no schema, but there are MSON attributes, then try
+          # to generate the schema. This will fail sometimes.
+          # TODO: Remove me when Drafter is released.
+          if not item.schema and item.content
+            for dataStructure in item.content
+              if dataStructure.element is 'dataStructure'
+                try
+                  schema = renderSchema(
+                    dataStructure.content[0], dataStructures)
+                  schema['$schema'] =
+                    'http://json-schema.org/draft-04/schema#'
+                  item.schema = JSON.stringify(schema, null, 2)
+                catch err
+                  if verbose
+                    console.log(
+                      JSON.stringify dataStructure.content[0], null, 2)
+                    console.log(err)
+
+          if item.content and not process.env.DRAFTER_EXAMPLES
+            for dataStructure in item.content
+              if dataStructure.element is 'dataStructure'
+                try
+                  item.body = JSON.stringify(renderExample(
+                    dataStructure.content[0], dataStructures), null, 2)
+                catch err
+                  if verbose
+                    console.log(
+                      JSON.stringify dataStructure.content[0], null, 2)
+                    console.log(err)
+
+          item.hasContent = item.description or \
+                            Object.keys(item.headers).length or \
+                            item.body or \
+                            item.schema
+          if item.body && item.body.startsWith("undefined")
+            delete item.body
+          if item.schema && item.schema.startsWith("undefined")
+            delete item.schema
+
+          # If possible, make the body/schema pretty
+          try
+            if item.body
+              item.body = JSON.stringify(JSON.parse(item.body), null, 2)
+            if item.schema
+              item.schema = JSON.stringify(JSON.parse(item.schema), null, 2)
+          catch err
+            false
+
         action.hasRequest = false
         for example in action.examples or []
-          for name in ['requests', 'responses']
-            for item in example[name] or []
-              if name is 'requests' and not action.hasRequest
-                action.hasRequest = true
+          for item in example.requests or []
+            if not action.hasRequest
+              action.hasRequest = true
+            processItem(item)
 
-              # If there is no schema, but there are MSON attributes, then try
-              # to generate the schema. This will fail sometimes.
-              # TODO: Remove me when Drafter is released.
-              if not item.schema and item.content
-                for dataStructure in item.content
-                  if dataStructure.element is 'dataStructure'
-                    try
-                      schema = renderSchema(
-                        dataStructure.content[0], dataStructures)
-                      schema['$schema'] =
-                        'http://json-schema.org/draft-04/schema#'
-                      item.schema = JSON.stringify(schema, null, 2)
-                    catch err
-                      if verbose
-                        console.log(
-                          JSON.stringify dataStructure.content[0], null, 2)
-                        console.log(err)
-
-              if item.content and not process.env.DRAFTER_EXAMPLES
-                for dataStructure in item.content
-                  if dataStructure.element is 'dataStructure'
-                    try
-                      item.body = JSON.stringify(renderExample(
-                        dataStructure.content[0], dataStructures), null, 2)
-                    catch err
-                      if verbose
-                        console.log(
-                          JSON.stringify dataStructure.content[0], null, 2)
-                        console.log(err)
-
-              item.hasContent = item.description or \
-                                Object.keys(item.headers).length or \
-                                item.body or \
-                                item.schema
-
-              # If possible, make the body/schema pretty
-              try
-                if item.body
-                  item.body = JSON.stringify(JSON.parse(item.body), null, 2)
-                if item.schema
-                  item.schema = JSON.stringify(JSON.parse(item.schema), null, 2)
-              catch err
-                false
+          for _, responses of example.responses or {}
+            responses.forEach(processItem)
 
 # Get the theme's configuration, used by Aglio to present available
 # options and confirm that the input blueprint is a supported
