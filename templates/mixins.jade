@@ -114,7 +114,7 @@ mixin Parameters(params)
     //- examples and descriptions.
     .title
         strong URI Parameters
-        .collapse-button
+        .collapse-button.show
             span.close Hide
             span.open Show
     .collapse-content
@@ -154,9 +154,7 @@ mixin RequestResponseSchemaDescriptionBody(description)
                     &nbsp;
                     i &#40;optional&#41;
                 if property.description
-                    span
-                        &#58;
-                        != self.markdown(property.description)
+                    span!= self.markdown(property.description)
                 if property.children
                     +RequestResponseSchemaDescriptionBody(property.children)
 
@@ -198,7 +196,17 @@ mixin RequestResponse(requestOrResponse, type)
                 h5 Semantics
                 div
                     +RequestResponseSchemaDescription(schema)
-            div(style="height: 1px;")
+
+            div
+                h5 JSON Schema
+                    .collapse-button.show
+                        span.close Hide
+                        span.open  Show
+                .collapse-content
+                    .inner
+                        pre(style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;")
+                            code
+                                != self.highlight(requestOrResponse.schema, null, ['json', 'yaml', 'xml'])
 
 mixin Requests(requests)
     - for (let request of requests)
@@ -207,9 +215,9 @@ mixin Requests(requests)
     .title
         strong
             if requests.length < 2
-                span Request Details
+                span Request Definition
             else
-                span Requests
+                span Request Definitions
         .collapse-button
             span.close Hide
             span.open  Show
@@ -308,7 +316,7 @@ mixin Responses(responses)
     -     }
 
     .title
-        strong Responses
+        strong Response Definitions
         .collapse-button
             span.close Hide
             span.open  Show
