@@ -112,13 +112,17 @@ mixin Nav()
 mixin Parameters(params)
     //- Draw a definition list of parameter names, types, defaults,
     //- examples and descriptions.
+
+    - const id = randomString(16)
     .title
         strong URI Parameters
-        .collapse-button.show
-            span.close Hide
-            span.open Show
-    .collapse-content
-        dl.inner: each param in params || []
+        span.collapse-link.pull-right
+            a(data-toggle="collapse", href="##{id}", role="button", aria-expanded="false", aria-controls="#{id}")
+                span.show Show
+                span.hide Hide
+
+    .collapse.show(id="#{id}")
+        dl: each param in params || []
             dt= self.urldec(param.name)
             dd
                 code= param.type || 'string'
@@ -186,7 +190,7 @@ mixin RequestResponse(requestOrResponse, type)
             div(style="height: 1px;")
         if requestOrResponse.body
             div(style="width: 50%; display: inline-block; vertical-align: top; padding-right: 4px")
-                h5 #{titleCase(type)} Body
+                h5 #{titleCase(type)} Body Summary
                 pre: code
                     != self.highlight(requestOrResponse.body, null, ['json', 'yaml', 'xml', 'javascript'])
         if requestOrResponse.schema
@@ -198,70 +202,73 @@ mixin RequestResponse(requestOrResponse, type)
                     +RequestResponseSchemaDescription(schema)
 
             div
-                h5 JSON Schema
-                    .collapse-button.show
-                        span.close Hide
-                        span.open  Show
-                .collapse-content
-                    .inner
-                        pre(style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;")
-                            code
-                                != self.highlight(requestOrResponse.schema, null, ['json', 'yaml', 'xml'])
+                - const id = randomString(16)
+                h5 #{titleCase(type)} Body JSON Schema
+                    span.collapse-link.pull-right
+                        a(data-toggle="collapse", href="##{id}", role="button", aria-expanded="false", aria-controls="#{id}", class="collapsed")
+                            span.show Show
+                            span.hide Hide
+                .collapse(id="#{id}")
+                    pre(style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap; word-wrap: break-word;")
+                        code
+                            != self.highlight(requestOrResponse.schema, null, ['json', 'yaml', 'xml'])
 
 mixin Requests(requests)
     - for (let request of requests)
     -   request.id = randomString(16)
 
+    - const id = randomString(16)
     .title
         strong
             if requests.length < 2
                 span Request Definition
             else
                 span Request Definitions
-        .collapse-button
-            span.close Hide
-            span.open  Show
+        span.collapse-link.pull-right
+            a(data-toggle="collapse", href="##{id}", role="button", aria-expanded="false", aria-controls="#{id}", class="collapsed")
+                span.show Show
+                span.hide Hide
 
-    .collapse-content
-        .inner
-            if requests.length < 2
+
+    .collapse(id="#{id}")
+        if requests.length < 2
+            for request, index in requests
+                +RequestResponse(request, 'request')
+        else
+            ul.nav.nav-tabs(role='tablist')
                 for request, index in requests
-                    +RequestResponse(request, 'request')
-            else
-                ul.nav.nav-tabs(role='tablist')
-                    for request, index in requests
-                        li.nav-item
-                            if index == 0
-                                a.nav-link.active(id='#{request.id}-tab',
-                                                  data-toggle='tab',
-                                                  href='##{request.id}',
-                                                  role='tab',
-                                                  aria-controls='#{request.id}',
-                                                  aria-selected='true')
-                                    span Type #{index+1}
-                            else
-                                a.nav-link(id='#{request.id}-tab',
-                                           data-toggle='tab',
-                                           href='##{request.id}',
-                                           role='tab',
-                                           aria-controls='#{request.id}',
-                                           aria-selected='false')
-                                    span Type #{index+1}
-
-                div.tab-content
-                    for request, index in requests
+                    li.nav-item
                         if index == 0
-                            div.tab-pane.fade.show.active(id='#{request.id}',
-                                                          role='tabpanel',
-                                                          aria-labelledby='#{request.id}-tab',
-                                                          style='padding: 16px')
-                                +RequestResponse(request, 'request')
+                            a.nav-link.active(id='#{request.id}-tab',
+                                                data-toggle='tab',
+                                                href='##{request.id}',
+                                                role='tab',
+                                                aria-controls='#{request.id}',
+                                                aria-selected='true')
+                                span Type #{index+1}
                         else
-                            div.tab-pane.fade(id='#{request.id}',
-                                              role='tabpanel',
-                                              aria-labelledby='#{request.id}-tab',
-                                              style='padding: 16px')
-                                +RequestResponse(request, 'request')
+                            a.nav-link(id='#{request.id}-tab',
+                                        data-toggle='tab',
+                                        href='##{request.id}',
+                                        role='tab',
+                                        aria-controls='#{request.id}',
+                                        aria-selected='false')
+                                span Type #{index+1}
+
+            div.tab-content
+                for request, index in requests
+                    if index == 0
+                        div.tab-pane.fade.show.active(id='#{request.id}',
+                                                        role='tabpanel',
+                                                        aria-labelledby='#{request.id}-tab',
+                                                        style='padding: 16px')
+                            +RequestResponse(request, 'request')
+                    else
+                        div.tab-pane.fade(id='#{request.id}',
+                                            role='tabpanel',
+                                            aria-labelledby='#{request.id}-tab',
+                                            style='padding: 16px')
+                            +RequestResponse(request, 'request')
 
 mixin ResponsesOfCode(responses)
 
@@ -315,46 +322,47 @@ mixin Responses(responses)
     -         })
     -     }
 
+    - const id = randomString(16)
     .title
         strong Response Definitions
-        .collapse-button
-            span.close Hide
-            span.open  Show
+        span.collapse-link.pull-right
+            a(data-toggle="collapse", href="##{id}", role="button", aria-expanded="false", aria-controls="#{id}", class="collapsed")
+                span.show Show
+                span.hide Hide
 
-    .collapse-content
-        .inner
-            ul.nav.nav-tabs(role='tablist')
-                for responsesOfCode, statusCode in responses
-                    li.nav-item
-                        if statusCode == Object.keys(responses)[0]
-                            a.nav-link.active(id='#{responses[statusCode].id}-tab',
-                                              data-toggle='tab',
-                                              href='##{responses[statusCode].id}',
-                                              role='tab',
-                                              aria-controls='#{responses[statusCode].id}',
-                                              aria-selected='true')
-                                span #{statusCode}
-                        else
-                            a.nav-link(id='#{responses[statusCode].id}-tab',
-                                       data-toggle='tab',
-                                       href='##{responses[statusCode].id}',
-                                       role='tab',
-                                       aria-controls='#{responses[statusCode].id}',
-                                       aria-selected='false')
-                                span #{statusCode}
-
-            div.tab-content
-                for responsesOfCode, statusCode in responses
+    .collapse(id="#{id}")
+        ul.nav.nav-tabs(role='tablist')
+            for responsesOfCode, statusCode in responses
+                li.nav-item
                     if statusCode == Object.keys(responses)[0]
-                        div.tab-pane.fade.show.active(id='#{responses[statusCode].id}',
-                                                      role='tabpanel',
-                                                      aria-labelledby='#{responses[statusCode].id}-tab')
-                            +ResponsesOfCode(responsesOfCode.responses)
+                        a.nav-link.active(id='#{responses[statusCode].id}-tab',
+                                            data-toggle='tab',
+                                            href='##{responses[statusCode].id}',
+                                            role='tab',
+                                            aria-controls='#{responses[statusCode].id}',
+                                            aria-selected='true')
+                            span #{statusCode}
                     else
-                        div.tab-pane.fade(id='#{responses[statusCode].id}',
-                                          role='tabpanel',
-                                          aria-labelledby='#{responses[statusCode].id}-tab')
-                            +ResponsesOfCode(responsesOfCode.responses)
+                        a.nav-link(id='#{responses[statusCode].id}-tab',
+                                    data-toggle='tab',
+                                    href='##{responses[statusCode].id}',
+                                    role='tab',
+                                    aria-controls='#{responses[statusCode].id}',
+                                    aria-selected='false')
+                            span #{statusCode}
+
+        div.tab-content
+            for responsesOfCode, statusCode in responses
+                if statusCode == Object.keys(responses)[0]
+                    div.tab-pane.fade.show.active(id='#{responses[statusCode].id}',
+                                                    role='tabpanel',
+                                                    aria-labelledby='#{responses[statusCode].id}-tab')
+                        +ResponsesOfCode(responsesOfCode.responses)
+                else
+                    div.tab-pane.fade(id='#{responses[statusCode].id}',
+                                        role='tabpanel',
+                                        aria-labelledby='#{responses[statusCode].id}-tab')
+                        +ResponsesOfCode(responsesOfCode.responses)
 
 
 mixin Examples(resourceGroup, resource, action)

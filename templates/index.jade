@@ -20,8 +20,18 @@ html
                 font-weight: bold;
                 font-size: 14px;
             }
-            .close {
-                font-size: 14px;
+
+            .collapse-link .collapsed .show {
+                display: inline;
+            }
+            .collapse-link .show {
+                display: none;
+            }
+            .collapse-link .hide {
+                display: inline;
+            }
+            .collapse-link .collapsed .hide {
+                display: none;
             }
     body.preload
         a.text-muted.back-to-top(href='#top')
